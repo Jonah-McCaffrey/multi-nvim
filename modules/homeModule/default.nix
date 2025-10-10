@@ -5,61 +5,47 @@
   ...
 }: let
   inherit (builtins) hasAttr;
-  inherit (lib) mkOption mkEnableOption mkIf mapAttrsToList mapAttrs;
-  inherit (lib.types) attrs attrsOf submodule;
+  inherit (lib) mkOption mkEnableOption mkIf mapAttrsToList;
+  inherit (lib.types) attrs;
+  cfg = config.programs.multi-nvim;
 in {
   options = {
-    home-manager.users = mkOption {
-      type = attrsOf (submodule {
-        options.home.multi-nvim = {
-          enable = mkEnableOption "multi-nvim";
-          packages = mkOption {
-            type = attrs;
-            default = {};
-            description = "Attribute set of wrapped neovim packages.";
-          };
-        };
-      });
-      default = {};
-      description = "Per-user Home Manager configuration with custom options.";
+    programs.multi-nvim = {
+      enable = mkEnableOption "multi-nvim";
+      packages = mkOption {
+        type = attrs;
+        default = {};
+        description = "Attribute set of wrapped neovim packages.";
+      };
     };
   };
+  config = mkIf cfg.enable {
+    home.packages =
+      mapAttrsToList (
+        pkgName: pkgConf: let
+          pkgs' =
+            if hasAttr "pkgs" pkgConf
+            then pkgConf.pkgs
+            else pkgs;
+          configName =
+            if hasAttr "configName" pkgConf
+            then pkgConf.configName
+            else pkgName;
+        in
+          pkgs.symlinkJoin {
+            name = pkgName; # Custom package name
 
-  config.home-manager.users =
-    mapAttrs (user: userConf: let
-      cfg = userConf.home.multi-nvim;
-    in {
-      home =
-        userConf.home
-        // mkIf cfg.enable {
-          packages =
-            mapAttrsToList (
-              pkgName: pkgConf: let
-                pkgs' =
-                  if hasAttr "pkgs" pkgConf
-                  then pkgConf.pkgs
-                  else pkgs;
-                configName =
-                  if hasAttr "configName" pkgConf
-                  then pkgConf.configName
-                  else pkgName;
-              in
-                pkgs.symlinkJoin {
-                  name = pkgName; # Custom package name
+            paths = [pkgs'.neovim];
 
-                  paths = [pkgs'.neovim];
+            nativeBuildInputs = [pkgs.makeWrapper];
 
-                  nativeBuildInputs = [pkgs.makeWrapper];
-
-                  postBuild = ''
-                    mv $out/bin/nvim $out/bin/${pkgName}  # Custom binary name
-                    wrapProgram $out/bin/${pkgName} \
-                      --set NVIM_APPNAME ${configName}  # Custom config dir: ~/.config/nvim-custom
-                  '';
-                }
-            )
-            cfg.packages;
-        };
-    })
-    config.home-manager.users;
+            postBuild = ''
+              mv $out/bin/nvim $out/bin/${pkgName}  # Custom binary name
+              wrapProgram $out/bin/${pkgName} \
+                --set NVIM_APPNAME ${configName}  # Custom config dir: ~/.config/nvim-custom
+            '';
+          }
+      )
+      cfg.packages;
+  };
 }
