@@ -7,7 +7,7 @@
   inherit (builtins) hasAttr;
   inherit (lib) mkOption mkEnableOption mkIf mapAttrsToList;
   inherit (lib.types) attrs;
-  cfg = config.multi-nvim;
+  cfg = config.programs.multi-nvim;
 in {
   options = {
     programs.multi-nvim = {
