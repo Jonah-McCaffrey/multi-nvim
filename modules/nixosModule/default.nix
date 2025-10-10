@@ -10,7 +10,7 @@
   cfg = config.multi-nvim;
 in {
   options = {
-    multi-nvim = {
+    programs.multi-nvim = {
       enable = mkEnableOption "multi-nvim";
       packages = mkOption {
         type = attrs;
