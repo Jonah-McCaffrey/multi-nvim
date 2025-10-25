@@ -20,38 +20,37 @@ in {
         if hasAttr "dependencies" pkgConf
         then pkgConf.dependencies
         else [];
+
+      # Runtime deps env: Merges libs/data without /bin
+      runtimeEnv = pkgs.buildEnv {
+        name = "myvim-runtime";
+        paths = runtimeDeps;
+        pathsToLink = [
+          "/lib" # Shared libraries
+          "/lib64" # 64-bit libs
+          "/share" # Data, configs, or Neovim runtime files (e.g., /share/nvim)
+          "/include" # Headers if needed
+          # Add others like "/etc" if relevant; explicitly omit "/bin"
+        ];
+        # Optional: Install extra outputs (e.g., dev/docs)
+        # extraOutputsToInstall = ["dev" "doc"];
+      };
     in
-      # pkgs.symlinkJoin {
-      #   name = pkgName; # Custom package name
-      #
-      #   paths = [nvimPackage] ++ runtimeDeps;
-      #
-      #   nativeBuildInputs = [pkgs.makeWrapper];
-      #
-      #   postBuild = ''
-      #     mv $out/bin/nvim $out/bin/${pkgName}  # Custom binary name
-      #     wrapProgram $out/bin/${pkgName} \
-      #       --set NVIM_APPNAME ${configName}  # Custom config dir: ~/.config/nvim-custom
-      #   '';
-      # }
-      pkgs.buildEnv {
+      pkgs.symlinkJoin {
         name = pkgName; # Custom package name
 
-        paths = [nvimPackage] ++ runtimeDeps;
+        paths = [nvimPackage runtimeEnv];
 
         nativeBuildInputs = [pkgs.makeWrapper];
-
-        pathsToLink = [
-          "/lib" # Libraries for runtime linking
-          "/lib64" # 64-bit libs (if applicable)
-          "/include" # Headers, if needed
-          "/share" # Data/config files
-        ];
 
         postBuild = ''
           mv $out/bin/nvim $out/bin/${pkgName}  # Custom binary name
           wrapProgram $out/bin/${pkgName} \
-            --set NVIM_APPNAME ${configName}  # Custom config dir: ~/.config/nvim-custom
+            --set NVIM_APPNAME ${pkgName}  # Custom config dir: ~/.config/nvim-custom
+          # Optional: For runtime access, e.g., add to Neovim's runtimepath or LD_LIBRARY_PATH
+          # wrapProgram $out/bin/${pkgName} \
+          #   --suffix PATH : "${runtimeEnv}/bin" \  # Only if you *want* some bins selectively
+          #   --suffix LD_LIBRARY_PATH : "$out/lib";  # Ensures libs are found
         '';
       }
   );
