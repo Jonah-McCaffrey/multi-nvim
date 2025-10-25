@@ -5,8 +5,8 @@
   ...
 }: let
   inherit (lib) mkOption mkEnableOption mkIf;
-  inherit (lib.types) attrs;
-  inherit (import ../../util.nix {inherit lib pkgs;}) extractDeps pkgGenFunction;
+  inherit (lib.types) attrs listOf package;
+  inherit (import ../../util.nix {inherit lib pkgs;}) pkgGenFunction;
   cfg = config.programs.multi-nvim;
 in {
   options = {
@@ -17,11 +17,14 @@ in {
         default = {};
         description = "Attribute set of wrapped neovim packages.";
       };
+      globalDeps = mkOption {
+        type = listOf package;
+        default = [];
+        description = "Packages to include as runtime dependencies for all configurations";
+      };
     };
   };
   config = mkIf cfg.enable {
-    environment.systemPackages =
-      (extractDeps cfg.configurations)
-      ++ (pkgGenFunction cfg.configurations);
+    environment.systemPackages = (pkgGenFunction cfg.configurations) ++ cfg.globalDeps;
   };
 }
