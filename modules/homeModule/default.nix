@@ -21,12 +21,12 @@ in {
   };
   config = mkIf cfg.enable (
     let
-      # Extract package dependencies for all configurationsh
+      # Extract package dependencies for all configurations
       dependencies = unique (flatten (mapAttrsToList (_: value:
         if hasAttr "dependencies" value
         then value.dependencies
         else [])
-      cfg.configuration));
+      cfg.configurations));
 
       # Function to generate the wrapped Neovim package
       pkgGenFunction = mapAttrsToList (
@@ -57,7 +57,7 @@ in {
     in {
       home.packages =
         dependencies
-        ++ (pkgGenFunction cfg.configuration);
+        ++ (pkgGenFunction cfg.configurations);
     }
   );
 }
