@@ -20,7 +20,7 @@ in {
       pkgs.symlinkJoin {
         name = pkgName; # Custom package name
 
-        paths = [nvimPackage] ++ pkgConf.deps;
+        paths = [nvimPackage] ++ pkgConf.dependencies;
 
         nativeBuildInputs = [pkgs.makeWrapper];
 
