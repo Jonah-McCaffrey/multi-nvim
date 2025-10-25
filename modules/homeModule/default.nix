@@ -5,7 +5,7 @@
   ...
 }: let
   inherit (builtins) hasAttr;
-  inherit (lib) mkOption mkEnableOption mkIf mapAttrsToList;
+  inherit (lib) mkOption mkEnableOption mkIf mapAttrsToList flatten;
   inherit (lib.types) attrs;
   cfg = config.programs.multi-nvim;
 in {
@@ -19,33 +19,38 @@ in {
       };
     };
   };
-  config = mkIf cfg.enable {
-    home.packages =
-      mapAttrsToList (
-        pkgName: pkgConf: let
-          pkgs' =
-            if hasAttr "pkgs" pkgConf
-            then pkgConf.pkgs
-            else pkgs;
-          configName =
-            if hasAttr "configName" pkgConf
-            then pkgConf.configName
-            else pkgName;
-        in
-          pkgs.symlinkJoin {
-            name = pkgName; # Custom package name
+  config = mkIf cfg.enable (
+    let
+      dependencies = flatten (mapAttrsToList (_: value: value.dependencies) cfg.packages);
+    in {
+      home.packages =
+        dependencies
+        ++ mapAttrsToList (
+          pkgName: pkgConf: let
+            pkgs' =
+              if hasAttr "pkgs" pkgConf
+              then pkgConf.pkgs
+              else pkgs;
+            configName =
+              if hasAttr "configName" pkgConf
+              then pkgConf.configName
+              else pkgName;
+          in
+            pkgs.symlinkJoin {
+              name = pkgName; # Custom package name
 
-            paths = [pkgs'.neovim];
+              paths = [pkgs'.neovim];
 
-            nativeBuildInputs = [pkgs.makeWrapper];
+              nativeBuildInputs = [pkgs.makeWrapper];
 
-            postBuild = ''
-              mv $out/bin/nvim $out/bin/${pkgName}  # Custom binary name
-              wrapProgram $out/bin/${pkgName} \
-                --set NVIM_APPNAME ${configName}  # Custom config dir: ~/.config/nvim-custom
-            '';
-          }
-      )
-      cfg.packages;
-  };
+              postBuild = ''
+                mv $out/bin/nvim $out/bin/${pkgName}  # Custom binary name
+                wrapProgram $out/bin/${pkgName} \
+                  --set NVIM_APPNAME ${configName}  # Custom config dir: ~/.config/nvim-custom
+              '';
+            }
+        )
+        cfg.packages;
+    }
+  );
 }
