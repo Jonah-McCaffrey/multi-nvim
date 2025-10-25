@@ -16,11 +16,15 @@ in {
         if hasAttr "configName" pkgConf
         then pkgConf.configName
         else pkgName;
+      runtimeDeps =
+        if hasAttr "dependencies" pkgConf
+        then pkgConf.dependencies
+        else [];
     in
       pkgs.symlinkJoin {
         name = pkgName; # Custom package name
 
-        paths = [nvimPackage] ++ pkgConf.dependencies;
+        paths = [nvimPackage] ++ runtimeDeps;
 
         nativeBuildInputs = [pkgs.makeWrapper];
 
