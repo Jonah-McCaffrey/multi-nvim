@@ -4,7 +4,6 @@
   lib,
   ...
 }: let
-  inherit (builtins) hasAttr;
   inherit (lib) mkOption mkEnableOption mkIf;
   inherit (lib.types) attrs;
   inherit (import ../../util.nix {inherit lib pkgs;}) extractDeps pkgGenFunction;

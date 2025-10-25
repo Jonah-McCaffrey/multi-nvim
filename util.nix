@@ -6,17 +6,12 @@
   inherit (lib) unique flatten mapAttrsToList hasAttr;
 in {
   # Extract package dependencies for all configurations
-  # extractDeps = configurations:
-  #   unique (flatten (mapAttrsToList (_: value:
-  #     if hasAttr "dependencies" value
-  #     then value.dependencies
-  #     else [])
-  #   configurations));
-
-  extractDeps = unique flatten mapAttrsToList (_: value:
-    if hasAttr "dependencies" value
-    then value.dependencies
-    else []);
+  extractDeps = configurations:
+    unique (flatten (mapAttrsToList (_: value:
+      if hasAttr "dependencies" value
+      then value.dependencies
+      else [])
+    configurations));
 
   # Function to generate the wrapped Neovim package
   pkgGenFunction = mapAttrsToList (
