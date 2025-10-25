@@ -21,7 +21,11 @@ in {
   };
   config = mkIf cfg.enable (
     let
-      dependencies = flatten (mapAttrsToList (_: value: value.dependencies) cfg.packages);
+      dependencies = flatten (mapAttrsToList (_: value:
+        if hasAttr "dependencies" value
+        then value.dependencies
+        else [])
+      cfg.packages);
     in {
       home.packages =
         dependencies
