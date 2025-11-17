@@ -2,29 +2,27 @@
   lib,
   pkgs,
   ...
-}: let
-  inherit (lib) mapAttrsToList hasAttr;
-in {
+}: {
   # Function to generate the wrapped Neovim package
-  pkgGenFunction = mapAttrsToList (
+  pkgGenFunction = lib.mapAttrsToList (
     pkgName: pkgConf: let
       nvimPackage =
-        if hasAttr "nvimPackage" pkgConf
+        if pkgConf ? "nvimPackage"
         then pkgConf.nvimPackage
         else pkgs.neovim;
       configName =
-        if hasAttr "configName" pkgConf
+        if pkgConf ? "configName"
         then pkgConf.configName
         else pkgName;
-      runtimeDeps =
-        if hasAttr "dependencies" pkgConf
+      dependencies =
+        if pkgConf ? "dependencies"
         then pkgConf.dependencies
         else [];
     in
       pkgs.symlinkJoin {
         name = pkgName; # Custom package name
 
-        paths = [nvimPackage] ++ runtimeDeps;
+        paths = [nvimPackage] ++ dependencies;
 
         nativeBuildInputs = [pkgs.makeWrapper];
 
